@@ -156,7 +156,7 @@ else:
             
             # Construir URL dinámica (reemplazar con tu URL real de Streamlit Cloud)
             # Ej: https://vaquita-express.streamlit.app/
-            url_app_base = "https://tu-app-de-vaquitas.streamlit.app/" 
+            url_app_base = "https://calc-umple.streamlit.app/" 
             link_compartir = f"{url_app_base}?evento={juntada_uid}"
             
             # Armar mensaje para WhatsApp
