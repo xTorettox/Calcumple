@@ -21,14 +21,20 @@ admin_id = query_params.get("admin")
 
 URL_BASE_APP = "https://calc-umple.streamlit.app/"
 
-# Función para acortar links con Is.gd (rápido y sin tokens)
+# Función para acortar links con TinyURL y red de seguridad
 def acortar_link(long_url):
     try:
-        shortener_url = f"https://is.gd/create.php?format=simple&url={urllib.parse.quote(long_url)}"
+        shortener_url = f"https://tinyurl.com/api-create.php?url={urllib.parse.quote(long_url)}"
         response = requests.get(shortener_url, timeout=5)
-        return response.text if response.status_code == 200 else long_url
+        
+        # Validamos que responda bien y que el texto devuelto sea realmente un link
+        if response.status_code == 200 and response.text.startswith("http"):
+            return response.text
+        else:
+            return long_url # Si falla, devolvemos el largo y listo
     except:
         return long_url
+
 
 # Función para subir imágenes al Storage público
 def subir_imagen(file_buffer, file_name):
