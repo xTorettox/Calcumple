@@ -6,7 +6,7 @@ import requests
 import uuid
 
 # Configuración de la página
-st.set_page_config(page_title="Vaquita Express", page_icon="💸", layout="centered")
+st.set_page_config(page_title="Vaquita Sulleriana", page_icon="💸", layout="centered")
 
 # Inicializar Supabase y LocalStorage
 url: str = st.secrets["SUPABASE_URL"]
