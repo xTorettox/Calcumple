@@ -224,7 +224,7 @@ else:
         if st.button("📸 Sacar foto al ticket de compra"): st.session_state.cam_creador = not st.session_state.cam_creador
         ticket_file = st.camera_input("Enfocá la factura") if st.session_state.cam_creador else None
         
-        participantes_str = st.text_area("Integrantes (separados por coma)", "Franco, Edu, Javi, Fede, JP, Caro, Mati, Andre, Anto, Vane")
+        participantes_str = st.text_area("Integrantes (separados por coma)", "Sullerio, Sullerita, Sullerión, etc")
         
         if st.button("🚀 Generar Vaquita", type="primary"):
             if monto_total > 0 and participantes_str:
