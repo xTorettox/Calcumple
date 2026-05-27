@@ -187,7 +187,7 @@ else:
     st.title("💸 Vaquita Express")
     st.write("Gestioná tus gastos compartidos al toque.")
     
-    tab_mis_cosas, tab_nueva = st.tabs(["📋 Mis Juntadas", "🚀 Crear Nueva Vaquita"])
+    tab_mis_cosas, tab_nueva = st.tabs(["📋 Mis Vaquitas", "🚀 Crear Nueva Vaquita"])
     
     with tab_mis_cosas:
         st.subheader("Tu historial en este dispositivo")
@@ -216,9 +216,9 @@ else:
             
     with tab_nueva:
         st.subheader("Crear nueva operación")
-        motivo = st.text_input("¿Qué se compró?", "Cumple Manolo")
+        motivo = st.text_input("¿Qué se compró?", "Cumple/Morfi/Cosa para repartir")
         monto_total = st.number_input("Monto Total ($)", min_value=0.0, step=500.0)
-        alias = st.text_input("Alias o CBU de destino", "JAVI.CENCO.MP")
+        alias = st.text_input("Alias o CBU de destino", "TU.ALIAS.MP")
         
         if 'cam_creador' not in st.session_state: st.session_state.cam_creador = False
         if st.button("📸 Sacar foto al ticket de compra"): st.session_state.cam_creador = not st.session_state.cam_creador
@@ -254,7 +254,7 @@ else:
                 st.success("¡Operación creada con éxito!")
                 st.markdown(f"### 📲 [Enviar al grupo de WhatsApp]({link_wa_final})")
                 
-                st.warning("🔒 **Tu link de Admin:** Se guardó en 'Mis Juntadas', pero por las dudas agendalo:")
+                st.warning("🔒 **Tu link de Admin:** Se guardó en 'Mis Vaquitas', pero por las dudas agendalo:")
                 st.code(link_admin_largo)
             else:
                 st.error("Por favor, completá el monto y poné al menos un integrante.")
