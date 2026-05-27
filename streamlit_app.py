@@ -102,6 +102,21 @@ if admin_id:
                     st.caption("Confirmó sin subir foto.")
         else:
             st.write(f"⏳ **{p['nombre']}** - Todavía debe")
+    
+    st.divider()
+    st.subheader("⚠️ Zona de Peligro")
+    if st.button("🗑️ Eliminar esta vaquita", type="primary", use_container_width=True):
+        # Borramos de Supabase (por cascade se borran los participantes también)
+        supabase.table("juntadas").delete().eq("id", admin_id).execute()
+        
+        # Opcional: la sacamos del historial de tu celu
+        mis_v = obtener_lista_local("mis_vaquitas_admin")
+        if admin_id in mis_v:
+            mis_v.remove(admin_id)
+            local_storage.setItem("mis_vaquitas_admin", mis_v)
+            
+        st.success("¡Vaquita eliminada con éxito! Cerrá esta pestaña o volvé al inicio.")
+        st.stop()
 
 # ==========================================
 # VISTA 2: INVITADO / RENDIJO DE PAGO
