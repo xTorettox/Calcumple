@@ -40,26 +40,31 @@ def subir_imagen(file_buffer, file_name):
         st.error(f"Error al subir imagen: {e}")
         return None
 
-# Helper para manejar listas en LocalStorage sin romper nada
+# Helpers corregidos para LocalStorage
 def obtener_lista_local(key):
-    lista = local_storage.get(key)
-    if lista is None:
+    resultado = local_storage.getItem(key)
+    if not resultado:
         return []
+    if isinstance(resultado, dict) and key in resultado:
+        lista = resultado[key]
+    else:
+        lista = resultado
     if isinstance(lista, str):
         return [x.strip() for x in lista.split(",") if x.strip()]
-    return list(lista)
+    elif isinstance(lista, list):
+        return lista
+    return [lista]
 
 def guardar_en_lista_local(key, nuevo_id):
     actual = obtener_lista_local(key)
     if nuevo_id not in actual:
         actual.append(nuevo_id)
-        local_storage.set(key, actual)
+        local_storage.setItem(key, actual)
 
 # ==========================================
 # VISTA 1: PANEL ADMIN
 # ==========================================
 if admin_id:
-    # Guardamos este ID en el navegador del creador para que lo recuerde
     guardar_en_lista_local("mis_vaquitas_admin", admin_id)
     
     res_juntada = supabase.table("juntadas").select("*").eq("id", admin_id).execute()
@@ -96,7 +101,6 @@ if admin_id:
 # VISTA 2: INVITADO / RENDIJO DE PAGO
 # ==========================================
 elif evento_id:
-    # Guardamos este ID en el navegador del invitado para su historial
     guardar_en_lista_local("mis_vaquitas_invitado", evento_id)
     
     res_juntada = supabase.table("juntadas").select("*").eq("id", evento_id).execute()
@@ -129,7 +133,6 @@ elif evento_id:
         
     st.divider()
     
-    # Formulario dinámico: solo deudores
     deudores = [p['nombre'] for p in participantes if not p['pago_confirmado']]
     if deudores:
         st.subheader("✍️ Informar mi pago")
@@ -168,7 +171,6 @@ else:
     with tab_mis_cosas:
         st.subheader("Tu historial en este dispositivo")
         
-        # Leemos la memoria del navegador de este usuario en particular
         admin_ids = obtener_lista_local("mis_vaquitas_admin")
         invitado_ids = obtener_lista_local("mis_vaquitas_invitado")
         
@@ -208,10 +210,8 @@ else:
                 lista_nombres = [n.strip() for n in participantes_str.split(",") if n.strip()]
                 juntada_uid = str(uuid.uuid4())
                 
-                # Subir ticket si se capturó
                 url_ticket = subir_imagen(ticket_file, f"ticket_{juntada_uid}.jpg") if ticket_file else None
                 
-                # Insertar en base de datos
                 supabase.table("juntadas").insert({
                     "id": juntada_uid, "motivo": motivo, "monto_total": monto_total,
                     "alias": alias, "foto_ticket_url": url_ticket
@@ -220,17 +220,12 @@ else:
                 datos_part = [{"juntada_id": juntada_uid, "nombre": nom} for nom in lista_nombres]
                 supabase.table("participantes").insert(datos_part).execute()
                 
-                # Generar links reales
                 link_evento_largo = f"{URL_BASE_APP}?evento={juntada_uid}"
                 link_admin_largo = f"{URL_BASE_APP}?admin={juntada_uid}"
                 
-                # Guardar en local storage del creador en el acto
                 guardar_en_lista_local("mis_vaquitas_admin", juntada_uid)
-                
-                # Acortar link para WhatsApp
                 link_evento_corto = acortar_link(link_evento_largo)
                 
-                # Formatear mensaje de WhatsApp
                 cuota = monto_total / len(lista_nombres)
                 msg_wa = f"¡Buenas! Salió vaquita para *{motivo}* 💸\n\n💰 *Cada uno pone:* ${cuota:,.2f}\n🔗 Entrá acá para ver el ticket y confirmar tu pago:\n{link_evento_corto}"
                 link_wa_final = f"https://wa.me/?text={urllib.parse.quote(msg_wa)}"
@@ -238,7 +233,7 @@ else:
                 st.success("¡Operación creada con éxito!")
                 st.markdown(f"### 📲 [Enviar al grupo de WhatsApp]({link_wa_final})")
                 
-                st.warning("🔒 **Tu link de Admin:** Se guardó automáticamente en la pestaña 'Mis Juntadas' de este dispositivo, pero por las dudas te lo dejo acá:")
+                st.warning("🔒 **Tu link de Admin:** Se guardó en 'Mis Juntadas', pero por las dudas agendalo:")
                 st.code(link_admin_largo)
             else:
                 st.error("Por favor, completá el monto y poné al menos un integrante.")
