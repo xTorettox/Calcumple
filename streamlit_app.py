@@ -6,7 +6,7 @@ import requests
 import uuid
 
 # Configuración de página
-st.set_page_config(page_title="Vaquita Sullair", page_icon="🐄", layout="centered")
+st.set_page_config(page_title="Vaquita Sulleriana", page_icon="🐄", layout="centered")
 
 # CSS para el look "Sullair"
 st.markdown("""
@@ -59,7 +59,7 @@ if admin_id:
     j = supabase.table("juntadas").select("*").eq("id", admin_id).execute().data[0]
     participantes = supabase.table("participantes").select("*").eq("juntada_id", admin_id).execute().data
     
-    st.title("🐄 Panel Admin Sullair")
+    st.title("🐄 Panel Admin Sulleriano")
     st.subheader(f"Motivo: {j['motivo']}")
     
     st.info(f"💰 Total: ${j['monto_total']:,.2f} | Alias: `{j['alias']}`")
@@ -90,7 +90,7 @@ elif evento_id:
     j = supabase.table("juntadas").select("*").eq("id", evento_id).execute().data[0]
     p = supabase.table("participantes").select("*").eq("juntada_id", evento_id).execute().data
     
-    st.title("🐄 Vaquita Sullair")
+    st.title("🐄 Vaquita Sulleriana")
     st.metric("Tu parte", f"${j['monto_total']/len(p):,.2f}")
     
     nombre_user = st.selectbox("¿Quién sos?", [x['nombre'] for x in p])
