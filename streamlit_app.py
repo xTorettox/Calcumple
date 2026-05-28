@@ -244,7 +244,7 @@ elif evento_id:
 # VISTA 3: LOBBY PRIVADO / CREACIÓN
 # ==========================================
 else:
-    st.title("💸 Vaquita Express")
+    st.title("💸 Vaquita Sulleriana")
     st.write("Gestioná tus gastos compartidos al toque.")
     
     tab_mis_cosas, tab_nueva = st.tabs(["📋 Mis Vaquitas", "🚀 Crear Nueva Vaquita"])
