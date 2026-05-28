@@ -30,7 +30,7 @@ def cargar_fondo_mosaico():
         }}
         
         .block-container {{
-            background-color: rgba(255, 255, 255, 0.85); /* Un poquito transparente para que se vean las vaquitas atrás */
+            background-color: rgba(255, 255, 255, 0.95); /* Un poquito transparente para que se vean las vaquitas atrás */
             padding: 2rem !important;
             border-radius: 20px;
             border: 1px solid #00A335;
