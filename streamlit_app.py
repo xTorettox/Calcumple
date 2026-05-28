@@ -82,8 +82,8 @@ elif evento_id:
             supabase.table("participantes").update({"pago_confirmado": True, "comprobante_url": url_img}).eq("id", estado['id']).execute()
             st.rerun()
     st.link_button("🔙 Volver al Lobby", URL_BASE_APP)
-admin_wpp = j.get('admin_whatsapp', 'tu_numero_predeterminado')
-st.link_button("🆘 Reportar Problema al Admin", f"https://wa.me/{admin_wpp}?text=Hola!%20Tengo%20un%20problema%20con%20la%20vaquita:%20{j['motivo']}")
+    admin_wpp = j.get('admin_whatsapp', 'tu_numero_predeterminado')
+    st.link_button("🆘 Reportar Problema al Admin", f"https://wa.me/{admin_wpp}?text=Hola!%20Tengo%20un%20problema%20con%20la%20vaquita:%20{j['motivo']}")
 else:
     st.title("💸 Vaquita Express")
     tab1, tab2 = st.tabs(["📋 Mis Vaquitas", "🚀 Crear"])
