@@ -16,38 +16,29 @@ def cargar_fondo_mosaico():
             encoded_string = base64.b64encode(image_file.read()).decode()
         return f"""
         <style>
+        /* Fondo principal */
         .stApp {{
             background-image: url("data:image/png;base64,{encoded_string}");
             background-repeat: repeat;
-            background-size: 340px; /* Tamaño del mosaico de vaquitas */
+            background-size: 400px; 
             background-attachment: fixed;
         }}
-        /* Bloque contenedor opaco para garantizar una lectura perfecta del texto */
+        
+        /* HACEMOS TRANSPARENTE EL BLOQUE CENTRAL */
+        section[data-testid="stSidebar"] {{
+            background-color: rgba(255, 255, 255, 0.8);
+        }}
+        
         .block-container {{
-            background-color: rgba(255, 255, 255, 0.93);
-            padding: 3rem 2rem !important;
-            border-radius: 25px;
-            box-shadow: 0 8px 32px 0 rgba(0, 163, 53, 0.1);
-            margin-top: 20px;
+            background-color: rgba(255, 255, 255, 0.85); /* Un poquito transparente para que se vean las vaquitas atrás */
+            padding: 2rem !important;
+            border-radius: 20px;
+            border: 1px solid #00A335;
         }}
-        h1, h2, h3 {{ color: #00A335 !important; }}
-        div.stButton > button {{ 
-            background-color: #00A335 !important; color: white !important; 
-            border-radius: 25px !important; border: none !important; font-weight: bold;
-        }}
-        .footer {{ text-align: center; color: #00A335; font-size: 0.85em; font-weight: bold; margin-top: 50px; }}
         </style>
         """
     except:
-        # Fallback si no encuentra el archivo en la raíz
-        return """
-        <style>
-        .stApp {{ background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); }}
-        h1, h2, h3 {{ color: #00A335 !important; }}
-        div.stButton > button {{ background-color: #00A335 !important; color: white !important; border-radius: 25px !important; border: none !important; }}
-        .footer {{ text-align: center; color: #00A335; font-size: 0.85em; font-weight: bold; margin-top: 50px; }}
-        </style>
-        """
+        return ""
 
 st.markdown(cargar_fondo_mosaico(), unsafe_allow_html=True)
 
