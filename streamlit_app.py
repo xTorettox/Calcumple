@@ -19,7 +19,7 @@ def cargar_fondo_mosaico():
         .stApp {{
             background-image: url("data:image/png;base64,{encoded_string}");
             background-repeat: repeat;
-            background-size: 140px; /* Tamaño del mosaico de vaquitas */
+            background-size: 340px; /* Tamaño del mosaico de vaquitas */
             background-attachment: fixed;
         }}
         /* Bloque contenedor opaco para garantizar una lectura perfecta del texto */
