@@ -6,9 +6,9 @@ import requests
 import uuid
 
 # Configuración de página
-st.set_page_config(page_title="Vaquita Sulleriana", page_icon="🐄", layout="centered")
+st.set_page_config(page_title="Vaquita Sullair", page_icon="🐄", layout="centered")
 
-# CSS para el look "Sullair"
+# CSS "Sullair Style"
 st.markdown("""
     <style>
     .stApp { background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); }
@@ -17,7 +17,6 @@ st.markdown("""
         background-color: #00A335 !important; color: white !important; 
         border-radius: 25px !important; border: none !important;
     }
-    .vaca-card { background: white; border: 2px solid #00A335; border-radius: 20px; padding: 20px; margin-bottom: 20px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -29,7 +28,7 @@ local_storage = LocalStorage()
 
 URL_BASE_APP = "https://calc-umple.streamlit.app/"
 
-# Helpers
+# Funciones Base
 def acortar_link(long_url):
     try:
         shortener_url = f"https://tinyurl.com/api-create.php?url={urllib.parse.quote(long_url)}"
@@ -49,22 +48,20 @@ def guardar_en_lista_local(key, nuevo_id):
         actual.append(nuevo_id)
         local_storage.setItem(key, actual)
 
-# --- VISTA 1: ADMIN ---
+# Lógica principal
 query_params = st.query_params
 admin_id = query_params.get("admin")
 evento_id = query_params.get("evento")
 
+# --- VISTA 1: ADMIN ---
 if admin_id:
     guardar_en_lista_local("mis_vaquitas_admin", admin_id)
     j = supabase.table("juntadas").select("*").eq("id", admin_id).execute().data[0]
     participantes = supabase.table("participantes").select("*").eq("juntada_id", admin_id).execute().data
     
-    st.title("🐄 Panel Admin Sulleriano")
-    st.subheader(f"Motivo: {j['motivo']}")
+    st.title("🐄 Panel Admin Sullair")
+    st.info(f"💰 {j['motivo']} | Total: ${j['monto_total']:,.2f}")
     
-    st.info(f"💰 Total: ${j['monto_total']:,.2f} | Alias: `{j['alias']}`")
-    
-    st.subheader("Control de Pagos")
     for p in participantes:
         if p['pago_confirmado']:
             with st.expander(f"✅ {p['nombre']}"):
@@ -76,37 +73,36 @@ if admin_id:
             st.write(f"⏳ {p['nombre']} (Debe)")
             
     st.divider()
-    st.subheader("🔗 Gestión")
-    st.text_input("Link Admin", value=f"{URL_BASE_APP}?admin={admin_id}", disabled=True)
     st.text_input("Link Invitado", value=acortar_link(f"{URL_BASE_APP}?evento={admin_id}"), disabled=True)
-    
-    if st.button("🗑️ Eliminar Vaquita", type="primary"):
+    if st.button("🗑️ Eliminar Vaquita"):
         supabase.table("juntadas").delete().eq("id", admin_id).execute()
-        st.success("¡Eliminado!")
-        st.stop()
+        st.rerun()
 
 # --- VISTA 2: INVITADO ---
 elif evento_id:
+    guardar_en_lista_local("mis_vaquitas_invitado", evento_id)
     j = supabase.table("juntadas").select("*").eq("id", evento_id).execute().data[0]
     p = supabase.table("participantes").select("*").eq("juntada_id", evento_id).execute().data
     
-    st.title("🐄 Vaquita Sulleriana")
-    st.metric("Tu parte", f"${j['monto_total']/len(p):,.2f}")
-    
+    st.title("🐄 Vaquita Sullair")
     nombre_user = st.selectbox("¿Quién sos?", [x['nombre'] for x in p])
     estado = next(item for item in p if item['nombre'] == nombre_user)
     
     if estado['pago_confirmado']:
         st.success("✅ ¡Gracias! Tu pago está confirmado.")
     else:
-        st.warning("⚠️ Todavía no registramos tu pago.")
         comprobante = st.camera_input("Sacale foto al comprobante")
-        if comprobante and st.button("Enviar"):
-            # Lógica de subida aquí...
-            st.success("¡Enviado a revisión!")
+        if comprobante and st.button("Confirmar Pago"):
+            supabase.table("participantes").update({"pago_confirmado": True}).eq("id", estado['id']).execute()
             st.rerun()
 
 # --- VISTA 3: LOBBY ---
 else:
     st.title("💸 Vaquita Express")
-    if st.button("🚀 Crear Nueva"): st.write("Tab de creación...")
+    tab1, tab2 = st.tabs(["📋 Mis Vaquitas", "🚀 Crear"])
+    with tab1:
+        admin_ids = obtener_lista_local("mis_vaquitas_admin")
+        for j_id in admin_ids:
+            st.write(f"👑 [Admin] Vaquita: {j_id}")
+    with tab2:
+        if st.button("Crear"): st.write("Lógica de creación...")
