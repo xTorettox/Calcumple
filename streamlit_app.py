@@ -4,11 +4,54 @@ from streamlit_local_storage import LocalStorage
 import urllib.parse
 import requests
 import uuid
+import base64
 
-# Configuración de la página
-st.set_page_config(page_title="Vaquita Sulleriana", page_icon="💸", layout="centered")
+# --- CONFIGURACIÓN DE LA PÁGINA ---
+st.set_page_config(page_title="Vaquita Sulleriana", page_icon="🐄", layout="centered")
 
-# Inicializar Supabase y LocalStorage
+# Función para convertir la imagen local vq_slr.png a Base64 e inyectarla como fondo mosaico
+def cargar_fondo_mosaico():
+    try:
+        with open("vq_slr.png", "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode()
+        return f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/png;base64,{encoded_string}");
+            background-repeat: repeat;
+            background-size: 140px; /* Tamaño del mosaico de vaquitas */
+            background-attachment: fixed;
+        }}
+        /* Bloque contenedor opaco para garantizar una lectura perfecta del texto */
+        .block-container {{
+            background-color: rgba(255, 255, 255, 0.93);
+            padding: 3rem 2rem !important;
+            border-radius: 25px;
+            box-shadow: 0 8px 32px 0 rgba(0, 163, 53, 0.1);
+            margin-top: 20px;
+        }}
+        h1, h2, h3 {{ color: #00A335 !important; }}
+        div.stButton > button {{ 
+            background-color: #00A335 !important; color: white !important; 
+            border-radius: 25px !important; border: none !important; font-weight: bold;
+        }}
+        .footer {{ text-align: center; color: #00A335; font-size: 0.85em; font-weight: bold; margin-top: 50px; }}
+        </style>
+        """
+    except:
+        # Fallback si no encuentra el archivo en la raíz
+        return """
+        <style>
+        .stApp {{ background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); }}
+        h1, h2, h3 {{ color: #00A335 !important; }}
+        div.stButton > button {{ background-color: #00A335 !important; color: white !important; border-radius: 25px !important; border: none !important; }}
+        .footer {{ text-align: center; color: #00A335; font-size: 0.85em; font-weight: bold; margin-top: 50px; }}
+        </style>
+        """
+
+st.markdown(cargar_fondo_mosaico(), unsafe_allow_html=True)
+
+# --- INICIALIZAR SUPABASE Y LOCALSTORAGE ---
 url: str = st.secrets["SUPABASE_URL"]
 key: str = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(url, key)
@@ -21,22 +64,17 @@ admin_id = query_params.get("admin")
 
 URL_BASE_APP = "https://calc-umple.streamlit.app/"
 
-# Función para acortar links con TinyURL y red de seguridad
+# --- FUNCIONES AUXILIARES ---
 def acortar_link(long_url):
     try:
         shortener_url = f"https://tinyurl.com/api-create.php?url={urllib.parse.quote(long_url)}"
         response = requests.get(shortener_url, timeout=5)
-        
-        # Validamos que responda bien y que el texto devuelto sea realmente un link
         if response.status_code == 200 and response.text.startswith("http"):
             return response.text
-        else:
-            return long_url # Si falla, devolvemos el largo y listo
+        return long_url
     except:
         return long_url
 
-
-# Función para subir imágenes al Storage público
 def subir_imagen(file_buffer, file_name):
     try:
         bucket = "vaquita-comprobantes"
@@ -46,7 +84,6 @@ def subir_imagen(file_buffer, file_name):
         st.error(f"Error al subir imagen: {e}")
         return None
 
-# Helpers corregidos para LocalStorage
 def obtener_lista_local(key):
     resultado = local_storage.getItem(key)
     if not resultado:
@@ -66,6 +103,7 @@ def guardar_en_lista_local(key, nuevo_id):
     if nuevo_id not in actual:
         actual.append(nuevo_id)
         local_storage.setItem(key, actual)
+
 
 # ==========================================
 # VISTA 1: PANEL ADMIN
@@ -100,23 +138,36 @@ if admin_id:
                     st.image(p['comprobante_url'], caption=f"Comprobante de {p['nombre']}")
                 else:
                     st.caption("Confirmó sin subir foto.")
+                
+                # BOTÓN DE RECHAZO (Para volverlo a poner como deudor)
+                if st.button(f"❌ Rechazar Pago de {p['nombre']}", key=f"rech_{p['id']}"):
+                    supabase.table("participantes").update({
+                        "pago_confirmado": False, 
+                        "comprobante_url": None,
+                        "comentario": "Rechazado por el Admin"
+                    }).eq("id", p['id']).execute()
+                    st.success(f"Pago de {p['nombre']} rechazado.")
+                    st.rerun()
         else:
             st.write(f"⏳ **{p['nombre']}** - Todavía debe")
     
     st.divider()
+    st.subheader("🔗 Gestión y Reenvío de Links")
+    link_invitado_corto = acortar_link(f"{URL_BASE_APP}?evento={admin_id}")
+    st.text_input("Link de Admin (Para seguirlo desde la PC - ¡No compartir!)", value=f"{URL_BASE_APP}?admin={admin_id}", disabled=True)
+    st.text_input("Link de Invitados (Para pasar por el grupo)", value=link_invitado_corto, disabled=True)
+    
+    st.divider()
     st.subheader("⚠️ Zona de Peligro")
-    if st.button("🗑️ Eliminar esta vaquita", type="primary", use_container_width=True):
-        # Borramos de Supabase (por cascade se borran los participantes también)
+    if st.button("🗑========= ELIMINAR ESTA VAQUITA =========", type="primary", use_container_width=True):
         supabase.table("juntadas").delete().eq("id", admin_id).execute()
-        
-        # Opcional: la sacamos del historial de tu celu
         mis_v = obtener_lista_local("mis_vaquitas_admin")
         if admin_id in mis_v:
             mis_v.remove(admin_id)
             local_storage.setItem("mis_vaquitas_admin", mis_v)
-            
-        st.success("¡Vaquita eliminada con éxito! Cerrá esta pestaña o volvé al inicio.")
+        st.success("¡Vaquita eliminada con éxito!")
         st.stop()
+
 
 # ==========================================
 # VISTA 2: INVITADO / RENDIJO DE PAGO
@@ -154,16 +205,25 @@ elif evento_id:
         
     st.divider()
     
-    deudores = [p['nombre'] for p in participantes if not p['pago_confirmado']]
-    if deudores:
-        st.subheader("✍️ Informar mi pago")
-        usuario_selec = st.selectbox("Seleccioná tu nombre", deudores)
+    # Comprobar estado dinámico según el nombre seleccionado
+    st.subheader("✍️ Informar mi pago")
+    todos_nombres = [p['nombre'] for p in participantes]
+    usuario_selec = st.selectbox("Seleccioná tu nombre", todos_nombres)
+    estado_usuario = next(p for p in participantes if p['nombre'] == usuario_selec)
+    
+    if estado_usuario['pago_confirmado']:
+        st.success("✅ ¡Tu pago ya fue registrado y confirmado para este evento!")
+    else:
         comentario = st.text_input("Comentario (opcional)", "¡Listo, transferido!")
         
-        if 'cam_usuario' not in st.session_state: st.session_state.cam_usuario = False
-        if st.button("📸 Adjuntar Comprobante"): st.session_state.cam_usuario = not st.session_state.cam_usuario
-            
-        comprobante_file = st.camera_input("Foto de la pantalla o ticket de transferencia") if st.session_state.cam_usuario else None
+        # CHICHE: Elegir entre cámara o archivo local de galería
+        origen_comp = st.radio("¿Cómo vas a subir el comprobante?", ["📁 Subir Archivo / Captura", "📸 Sacar Foto en Vivo"])
+        
+        comprobante_file = None
+        if origen_comp == "📸 Sacar Foto en Vivo":
+            comprobante_file = st.camera_input("Foto de la pantalla o ticket")
+        else:
+            comprobante_file = st.file_uploader("Elegí el comprobante desde tus archivos", type=["jpg", "jpeg", "png"])
         
         if st.button("Confirmar Pago 🚀", type="primary"):
             url_comp = subir_imagen(comprobante_file, f"comp_{evento_id}_{uuid.uuid4().hex}.jpg") if comprobante_file else None
@@ -172,13 +232,22 @@ elif evento_id:
                 "pago_confirmado": True,
                 "comentario": comentario,
                 "comprobante_url": url_comp
-            }).eq("juntada_id", evento_id).eq("nombre", usuario_selec).execute()
+            }).eq("id", estado_usuario['id']).execute()
             
-            st.success("¡Pago registrado! Ya te tachamos de la lista.")
+            st.success("¡Pago registrado! El Administrador ya puede auditarlo.")
             st.rerun()
-    else:
-        st.balloons()
-        st.success("🎉 ¡Espectacular! Esta vaquita ya está completamente cobrada.")
+            
+    # BOTONES DE SOPORTE Y NAVEGACIÓN
+    st.divider()
+    col_back, col_report = st.columns(2)
+    with col_back:
+        st.link_button("Toque acá para ir al lobby principal", URL_BASE_APP)
+    with col_report:
+        admin_wpp = juntada.get('admin_whatsapp', '549299000000') # Respaldo por si viene vacío
+        msg_wpp = f"Hola! Tengo un problema para rendir el pago en la vaquita *{juntada['motivo']}*."
+        link_soporte = f"https://wa.me/{admin_wpp}?text={urllib.parse.quote(msg_wpp)}"
+        st.link_button("Avisarle al Admin por un problema", link_soporte)
+
 
 # ==========================================
 # VISTA 3: LOBBY PRIVADO / CREACIÓN
@@ -219,15 +288,16 @@ else:
         motivo = st.text_input("¿Qué se compró?", "Cumple/Morfi/Cosa para repartir")
         monto_total = st.number_input("Monto Total ($)", min_value=0.0, step=500.0)
         alias = st.text_input("Alias o CBU de destino", "TU.ALIAS.MP")
+        wpp_admin = st.text_input("Tu Nro WhatsApp (Ej: 5492994123456 - Clave para reportes)", "549")
         
         if 'cam_creador' not in st.session_state: st.session_state.cam_creador = False
         if st.button("📸 Sacar foto al ticket de compra"): st.session_state.cam_creador = not st.session_state.cam_creador
         ticket_file = st.camera_input("Enfocá la factura") if st.session_state.cam_creador else None
         
-        participantes_str = st.text_area("Integrantes (separados por coma)", "Sullerio, Sullerita, Sullerión, etc")
+        participantes_str = st.text_area("Integrantes (separados por coma)", "Sullerio, Sullerita, Sullerión")
         
         if st.button("🚀 Generar Vaquita", type="primary"):
-            if monto_total > 0 and participantes_str:
+            if monto_total > 0 and participantes_str and wpp_admin != "549":
                 lista_nombres = [n.strip() for n in participantes_str.split(",") if n.strip()]
                 juntada_uid = str(uuid.uuid4())
                 
@@ -235,7 +305,7 @@ else:
                 
                 supabase.table("juntadas").insert({
                     "id": juntada_uid, "motivo": motivo, "monto_total": monto_total,
-                    "alias": alias, "foto_ticket_url": url_ticket
+                    "alias": alias, "foto_ticket_url": url_ticket, "admin_whatsapp": wpp_admin
                 }).execute()
                 
                 datos_part = [{"juntada_id": juntada_uid, "nombre": nom} for nom in lista_nombres]
@@ -254,7 +324,10 @@ else:
                 st.success("¡Operación creada con éxito!")
                 st.markdown(f"### 📲 [Enviar al grupo de WhatsApp]({link_wa_final})")
                 
-                st.warning("🔒 **Tu link de Admin:** Se guardó en 'Mis Vaquitas', pero por las dudas agendalo:")
+                st.warning("🔒 **Tu link de Admin:** Se guardó en la pestaña 'Mis Vaquitas', pero agendalo por seguridad:")
                 st.code(link_admin_largo)
             else:
-                st.error("Por favor, completá el monto y poné al menos un integrante.")
+                st.error("Che, completá el monto, integrantes y poné tu número de WhatsApp válido.")
+
+# --- PIE DE PÁGINA ---
+st.markdown('<div class="footer">Hecho con 💚 por Fede GC para los Sullerianos - 2026©</div>', unsafe_allow_html=True)
